@@ -1,0 +1,3 @@
+# Project Machine Learning
+
+This repository is a work-in-progress for the class **Project Machine Learning**. More info will follow asap.
