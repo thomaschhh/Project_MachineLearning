@@ -31,9 +31,9 @@ def plot_loss_acc(train_loss, val_loss, n_epochs, outfile = True):
         a.legend(['train','val'],loc=4)
         a.set_xlabel('Number of Epochs')
     if outfile:
-        plt.savefig("output/figures/loss_plot.png")
+        plt.savefig(f"output3/figures/loss_plot_{n_epochs}.png")
     plt.show()
-    
+    plt.close('all') 
 
 
 
@@ -67,3 +67,4 @@ def show_img(batch, label, name = "Input_3x3.png", outfile = True):
     plt.suptitle('9 Randomly Chosen Input Pictures')
     plt.savefig(name)
     plt.show()
+    plt.close('all') 

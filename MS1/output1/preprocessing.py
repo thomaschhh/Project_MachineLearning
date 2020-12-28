@@ -22,7 +22,7 @@ def preprocessing(model, features, n_components = 256):
     f_normalized = features / row_sums[:, np.newaxis]
     return f_normalized
 
-def clustering(pre_data, k):
+def clustering(pre_data, k = 2):
     #random_cen = random(pre_data)
     kmeans = KMeans(n_clusters=k).fit(pre_data)
     clustered_ind = kmeans.fit_predict(pre_data)

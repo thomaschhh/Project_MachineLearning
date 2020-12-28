@@ -16,7 +16,7 @@ def parse_args():
 
     parser.add_argument('--path',  help='path to dataset',type = str, default = '/home/space/datasets/imagenet/2012/train_set_small')
     parser.add_argument('--sobel', action='store_true', help='Sobel filtering')
-    parser.add_argument('--k', '--nmb_cluster', type=int, default=50,
+    parser.add_argument('--k', '--nmb_cluster', type=int, default=5,
                         help='number of cluster for k-means (default: 10000)')
     parser.add_argument('--lr', default=0.05, type=float,
                         help='learning rate (default: 0.05)')
@@ -27,11 +27,11 @@ def parse_args():
                         reassignments of clusters (default: 1)""")
     parser.add_argument('--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
-    parser.add_argument('--ep', type=int, default=100,
+    parser.add_argument('--ep', type=int, default=30,
                         help='number of total epochs to run (default: 200)')
     parser.add_argument('--start_epoch', default=0, type=int,
                         help='manual epoch number (useful on restarts) (default: 0)')
-    parser.add_argument('--bs', default=50, type=int,
+    parser.add_argument('--bs', default=9, type=int,
                         help='mini-batch size (default: 256)')
     parser.add_argument('--momentum', default=0.9, type=float, help='momentum (default: 0.9)')
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
@@ -85,27 +85,22 @@ def test(dataloader, model, crit):
     model.eval()
     test_loss = 0
     for i, (input_tensor, target) in enumerate(dataloader):
-        target = target.cuda(non_blocking=True)
-        input_var = torch.autograd.Variable(input_tensor.cuda())
-        #input_var = torch.autograd.Variable(input_tensor)
-        target_var = torch.autograd.Variable(target)
-        output = model(input_var)
-        test_loss = crit(output, target_var) 
+        output = model(input_tensor)
+        test_loss = crit(output, target) 
     return test_loss
 
 #main method
 def main(args):
     # fix random seeds
-    print('start training')
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
     np.random.seed(args.seed)
     # load the data
-    dataloader, dataset_train, testL, dataset_test = load_data(args.path, args.bs, train_ratio = 0.9, test_ratio = 0.1)
+    dataloader, dataset_train, testL, dataset_test = load_data(args.path, args.bs, train_ratio = 0.1, test_ratio = 0.9)
     #load vgg
-    model = Models.__dict__["vgg16"](args.sobel) # pretrained weights?
+    model = Models.__dict__["vgg16"](args.sobel) 
     fd = int(model.top_layer.weight.size()[1]) 
-    model.top_layer = None # why? do we need it here?
+    model.top_layer = None 
     model.features = torch.nn.DataParallel(model.features)    
     model.cuda()
     cudnn.benchmark = True
@@ -120,18 +115,18 @@ def main(args):
 
     # define loss function
     criterion = nn.CrossEntropyLoss().cuda()
-    losses = np.zeros(args.ep) # loss per epoch, array of size ep x 1
+    losses = np.zeros(args.ep)
     # for all epochs
     for epoch in range(args.ep):
         # remove head
         model.top_layer = None
-        model.classifier = nn.Sequential(*list(model.classifier.children())[:-1]) # The actual classifier seems missing here, why are just the children added to a list?
+        model.classifier = nn.Sequential(*list(model.classifier.children())[:-1])
         # get the features for the whole dataset
-        labels = [573, 671] # move to another location, maybe outside for-loop, outside training method
+        labels = [573, 671]
         features = compute_features(dataloader, model, len(dataset_train), args.bs, labels)
         pre_data = preprocessing(model, features)
         
-        clus_data, images_list = clustering(pre_data, args.k)
+        clus_data, images_list= clustering(pre_data,args.k)
         
         # pseudo labels
         train_dataset = cluster_assign(images_list, dataset_train)
@@ -158,7 +153,7 @@ def main(args):
         
         losses[epoch] = train(train_dataloader, model, criterion, optimizer, epoch, args.lr, args.wd)
         print(f'epoch {epoch} ended with loss {losses[epoch]}')
-        plot_loss_acc(losses[0:epoch],losses[0:epoch], epoch)
+        plot_loss_acc(losses[0:epoch],losses[0:epoch], args.ep)
     loss_test = test(testL, model, criterion)
     
     print(loss_test)

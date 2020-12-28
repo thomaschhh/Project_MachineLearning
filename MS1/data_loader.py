@@ -26,7 +26,7 @@ def load_data(path, batchSize, train_ratio=0.8, test_ratio=0.2):
     dataset = datasets.ImageFolder(path, transform=transforms.Compose(tra))
     
     n_train = int(train_ratio * len(dataset))
-    n_test = int(test_ratio * len(dataset))
+    n_test =  len(dataset)-n_train
     
     data_train, data_test = torch.utils.data.random_split(dataset, [n_train, n_test])
     
