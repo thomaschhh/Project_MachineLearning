@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+#$ -l cuda=1 # remove this line when no GPU is needed!
+#$ -q all.q # do not fill the qlogin queue
+#$ -cwd # start processes in current working directory
+#$ -V # provide environment variables to processes
+
 import numpy as np
 from data_loader import load_data
 import Models
@@ -10,6 +16,7 @@ from preprocessing import compute_features, preprocessing, clustering, cluster_a
 from utils import UnifLabelSampler, AverageMeter
 from tqdm import tqdm
 from visualization import plot_loss_acc, show_img
+from datetime import datetime
 
 def parse_args():
     parser = argparse.ArgumentParser(description='PyTorch Implementation of DeepCluster')
@@ -100,6 +107,7 @@ def main(args):
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
     np.random.seed(args.seed)
+    now = datetime.now()
     # load the data
     dataloader, dataset_train, testL, dataset_test = load_data(args.path, args.bs, train_ratio = 0.9, test_ratio = 0.1)
     #load vgg
@@ -158,7 +166,7 @@ def main(args):
         
         losses[epoch] = train(train_dataloader, model, criterion, optimizer, epoch, args.lr, args.wd)
         print(f'epoch {epoch} ended with loss {losses[epoch]}')
-        plot_loss_acc(losses[0:epoch],losses[0:epoch], epoch)
+        plot_loss_acc(losses[0:epoch],losses[0:epoch], epoch, now)
     loss_test = test(testL, model, criterion)
     
     print(loss_test)

@@ -16,7 +16,7 @@ def preprocessing(model, features, n_components = 256):
     mat.train(npdata)
     assert mat.is_trained
     pca_reduced = mat.apply_py(npdata)
-
+ 
     #print(pca_reduced)
     row_sums = np.linalg.norm(pca_reduced, axis=1)
     f_normalized = features / row_sums[:, np.newaxis]

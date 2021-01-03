@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import os
 
 # train model
 # hist = model.fit(X_train, y_train, batch_size=batch_size, epochs=n_epochs, verbose=1, validation_split=0.2)
 
-def plot_loss_acc(train_loss, val_loss, n_epochs, outfile = True):
+def plot_loss_acc(train_loss, val_loss, n_epochs, now, outfile = True):
     # visualizing losses and accuracy
     #train_loss, val_loss = hist.history['loss'], hist.history['val_loss']
     #train_acc, val_acc = hist.history['accuracy'], hist.history['val_accuracy']
@@ -14,16 +14,10 @@ def plot_loss_acc(train_loss, val_loss, n_epochs, outfile = True):
     fig, ax = plt.subplots(nrows=1, ncols=2,figsize=(15,5))
 
     # plot loss
-    ax[0].plot(range(n_epochs), train_loss)
+    plt.plot(range(n_epochs), train_loss)
   #  ax[0].plot(range(n_epochs), val_loss)
-    ax[0].set_ylabel('loss')
-    ax[0].set_title('train_loss')
-    
-    # plot accuracy
-    ax[1].plot(range(n_epochs), train_loss)
-    ax[1].plot(range(n_epochs), val_loss)
-    ax[1].set_ylabel('accuracy')
-    ax[1].set_title('train_acc vs val_acc')
+    plt.set_ylabel('loss')
+    plt.set_title('train_loss')
 
     # plot adjustement
     for a in ax:
@@ -31,7 +25,8 @@ def plot_loss_acc(train_loss, val_loss, n_epochs, outfile = True):
         a.legend(['train','val'],loc=4)
         a.set_xlabel('Number of Epochs')
     if outfile:
-        plt.savefig(f"output3/figures/loss_plot_{n_epochs}.png")
+        os.mkdir(f"output/figures/{now}/loss")
+        plt.savefig(f"output/figures/{now}/loss_plot_{n_epochs}.png")
     plt.show()
     plt.close('all') 
 
@@ -65,6 +60,6 @@ def show_img(batch, label, name = "Input_3x3.png", outfile = True):
     plt.tight_layout()
     plt.subplots_adjust(top=0.85)
     plt.suptitle('9 Randomly Chosen Input Pictures')
-    plt.savefig(name)
+    plt.savefig(f"output/figures/input_imgs/")
     plt.show()
     plt.close('all') 
