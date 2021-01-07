@@ -176,8 +176,8 @@ def main(args):
         
         losses[epoch], accuracies[epoch] = train(train_dataloader, model, criterion, optimizer, epoch, args.lr, args.wd)
         print(f'epoch {epoch} ended with loss {losses[epoch]}')
-        losses_val[epoch], accuracies[epoch] = validate(dataloader_val, model, criterion)
-        plot_loss_acc(losses[0:epoch],losses_val[0:epoch], epoch, now)
+        losses_val[epoch], accuracies_val[epoch] = validate(dataloader_val, model, criterion)
+        plot_loss_acc(losses[0:epoch],losses_val[0:epoch], accuracies[epoch], accuracies_val[epoch], epoch, now)
     
     
     
