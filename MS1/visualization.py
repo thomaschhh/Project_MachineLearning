@@ -11,7 +11,7 @@ def plot_loss_acc(train_loss, val_loss, n_epochs, now, outfile = True):
     #train_acc, val_acc = hist.history['accuracy'], hist.history['val_accuracy']
 
     # setup plot
-    fig, ax = plt.subplots(nrows=1, ncols=2,figsize=(15,5))
+    fig, ax = plt.figure(figsize=(15,5))
 
     # plot loss
     plt.plot(range(n_epochs), train_loss)

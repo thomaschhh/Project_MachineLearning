@@ -34,7 +34,7 @@ def parse_args():
                         reassignments of clusters (default: 1)""")
     parser.add_argument('--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
-    parser.add_argument('--ep', type=int, default=100,
+    parser.add_argument('--ep', type=int, default=200,
                         help='number of total epochs to run (default: 200)')
     parser.add_argument('--start_epoch', default=0, type=int,
                         help='manual epoch number (useful on restarts) (default: 0)')
@@ -87,7 +87,7 @@ def train(dataLoader, model, crit, optimizer, epoch, lr, wd):
         
     return losses.avg
 
-def test(dataloader, model, crit):
+def validate(dataloader, model, crit):
     #test
     model.eval()
     test_loss = 0
@@ -109,7 +109,7 @@ def main(args):
     np.random.seed(args.seed)
     now = datetime.now()
     # load the data
-    dataloader, dataset_train, testL, dataset_test = load_data(args.path, args.bs, train_ratio = 0.9, test_ratio = 0.1)
+    dataloader, dataset_train, dataloader_val, dataset_val = load_data(args.path, args.bs, train_ratio = 0.9, test_ratio = 0.1)
     #load vgg
     model = Models.__dict__["vgg16"](args.sobel) # pretrained weights?
     fd = int(model.top_layer.weight.size()[1]) 
@@ -129,6 +129,7 @@ def main(args):
     # define loss function
     criterion = nn.CrossEntropyLoss().cuda()
     losses = np.zeros(args.ep) # loss per epoch, array of size ep x 1
+    losses_val = np.zeros(args.ep)
     # for all epochs
     for epoch in range(args.ep):
         # remove head
@@ -166,10 +167,8 @@ def main(args):
         
         losses[epoch] = train(train_dataloader, model, criterion, optimizer, epoch, args.lr, args.wd)
         print(f'epoch {epoch} ended with loss {losses[epoch]}')
-        plot_loss_acc(losses[0:epoch],losses[0:epoch], epoch, now)
-    loss_test = test(testL, model, criterion)
-    
-    print(loss_test)
+        losses_val[epoch] = validate(dataloader_val, model, criterion)
+        plot_loss_acc(losses[0:epoch],losses_val[0:epoch], epoch, now)
     
     
     
