@@ -16,6 +16,7 @@ from preprocessing import compute_features, preprocessing, clustering, cluster_a
 from utils import UnifLabelSampler, AverageMeter
 from tqdm import tqdm
 from visualization import plot_loss_acc, show_img
+from datetime import datetime
 
 def parse_args():
     parser = argparse.ArgumentParser(description='PyTorch Implementation of DeepCluster')
@@ -55,6 +56,7 @@ def train(dataLoader, model, crit, optimizer, epoch, lr, wd):
             show_img(input_tensor[0:9], label = target[0:9])
         
         losses = AverageMeter()
+        accuracies = AverageMeter()
         # switch to train mode
         model.train()
         # create an optimizer for the last fc layer
@@ -69,13 +71,13 @@ def train(dataLoader, model, crit, optimizer, epoch, lr, wd):
         target_var = torch.autograd.Variable(target)
 
         output = model(input_var)
-      #  print(target.clone().detach().cpu().numpy())
-        #print(output.clone().detach().cpu().numpy().shape)
+      
         loss = crit(output, target_var)
-        # record loss
-        #print(loss)
+        acc = torch.sum(output == target_var)
+        
        
         losses.update(loss.data, input_tensor.size(0))
+        accuracies.update(acc.data,input_tensor.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -84,30 +86,35 @@ def train(dataLoader, model, crit, optimizer, epoch, lr, wd):
         optimizer.step()
         optimizer_tl.step()
         
-    return losses.avg
+    return losses.avg, accuracies.avg
 
-def test(dataloader, model, crit):
+def validate(dataloader, model, crit):
     #test
     model.eval()
     test_loss = 0
     for i, (input_tensor, target) in enumerate(dataloader):
+        losses = AverageMeter()
+        accuracies = AverageMeter()
         target = target.cuda(non_blocking=True)
         input_var = torch.autograd.Variable(input_tensor.cuda())
         #input_var = torch.autograd.Variable(input_tensor)
         target_var = torch.autograd.Variable(target)
         output = model(input_var)
-        test_loss = crit(output, target_var) 
-    return test_loss
+        loss = crit(output, target_var) 
+        acc = torch.sum(output == target_var)
+        losses.update(loss.data, input_tensor.size(0))
+        accuracies.update(acc.data,input_tensor.size(0))
+    return losses.avg, accuracies.avg
 
-#main method
 def main(args):
     # fix random seeds
     print('start training')
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
     np.random.seed(args.seed)
+    now = datetime.now()
     # load the data
-    dataloader, dataset_train, testL, dataset_test = load_data(args.path, args.bs, train_ratio = 0.9, test_ratio = 0.1)
+    dataloader, dataset_train, dataloader_val, dataset_val = load_data(args.path, args.bs, train_ratio = 0.9, test_ratio = 0.1)
     #load vgg
     model = Models.__dict__["vgg16"](args.sobel) # pretrained weights?
     fd = int(model.top_layer.weight.size()[1]) 
@@ -127,13 +134,18 @@ def main(args):
     # define loss function
     criterion = nn.CrossEntropyLoss().cuda()
     losses = np.zeros(args.ep) # loss per epoch, array of size ep x 1
+    accuracies = np.zeros(args.ep)
+    losses_val = np.zeros(args.ep)
+    accuracies_val = np.zeros(args.ep)
+    labels = [573, 671] # move to another location, maybe outside for-loop, outside training method
+    
     # for all epochs
     for epoch in range(args.ep):
         # remove head
         model.top_layer = None
         model.classifier = nn.Sequential(*list(model.classifier.children())[:-1]) # The actual classifier seems missing here, why are just the children added to a list?
         # get the features for the whole dataset
-        labels = [573, 671] # move to another location, maybe outside for-loop, outside training method
+        
         features = compute_features(dataloader, model, len(dataset_train), args.bs, labels)
         pre_data = preprocessing(model, features)
         
@@ -162,12 +174,10 @@ def main(args):
         model.top_layer.cuda()
         # train network with clusters as pseudo-labels
         
-        losses[epoch] = train(train_dataloader, model, criterion, optimizer, epoch, args.lr, args.wd)
+        losses[epoch], accuracies[epoch] = train(train_dataloader, model, criterion, optimizer, epoch, args.lr, args.wd)
         print(f'epoch {epoch} ended with loss {losses[epoch]}')
-        plot_loss_acc(losses[0:epoch],losses[0:epoch], epoch)
-    loss_test = test(testL, model, criterion)
-    
-    print(loss_test)
+        losses_val[epoch], accuracies[epoch] = validate(dataloader_val, model, criterion)
+        plot_loss_acc(losses[0:epoch],losses_val[0:epoch], epoch, now)
     
     
     
