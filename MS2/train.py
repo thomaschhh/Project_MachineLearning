@@ -3,7 +3,11 @@
 #$ -q all.q # do not fill the qlogin queue
 #$ -cwd # start processes in current working directory
 #$ -V # provide environment variables to processes
+#$ -o output.txt
+#$ -e error.txt
 
+import sys
+sys.path.append('/home/pml_16/MS2')
 import numpy as np
 from data_loader import load_data
 import Models
@@ -52,9 +56,7 @@ def parse_args():
 
 def train(dataLoader, model, crit, optimizer, epoch, lr, wd):
     for i, (input_tensor, target) in enumerate(dataLoader):
-        if i ==0:
-            show_img(input_tensor[0:9], label = target[0:9])
-        
+        print(f'trained {i}-th feature')
         losses = AverageMeter()
         accuracies = AverageMeter()
         # switch to train mode
@@ -91,15 +93,17 @@ def train(dataLoader, model, crit, optimizer, epoch, lr, wd):
 def validate(dataloader, model, crit):
     #test
     model.eval()
-    test_loss = 0
+   
     for i, (input_tensor, target) in enumerate(dataloader):
         losses = AverageMeter()
         accuracies = AverageMeter()
         target = target.cuda(non_blocking=True)
         input_var = torch.autograd.Variable(input_tensor.cuda())
-        #input_var = torch.autograd.Variable(input_tensor)
+       
         target_var = torch.autograd.Variable(target)
         output = model(input_var)
+        print(output)
+        print(target_var)
         loss = crit(output, target_var) 
         acc = torch.sum(output == target_var)
         losses.update(loss.data, input_tensor.size(0))
@@ -147,23 +151,34 @@ def main(args):
         # get the features for the whole dataset
         
         features = compute_features(dataloader, model, len(dataset_train), args.bs, labels)
+        features_val = compute_features(dataloader_val, model, len(dataset_val), args.bs, labels)
+        print('PCA')
         pre_data = preprocessing(model, features)
-        
+        pre_data_val = preprocessing(model, features_val)
+        print('clustering')
         clus_data, images_list = clustering(pre_data, args.k)
-        
+        clus_data_val, images_list_val = clustering(pre_data_val, args.k)
         # pseudo labels
+        print('train pseudolabels')
         train_dataset = cluster_assign(images_list, dataset_train)
+        val_dataset = cluster_assign(images_list_val, dataset_val)
         len_d = len(train_dataset)
+        len_val = len(val_dataset)
         # uniformly sample per target
         sampler = UnifLabelSampler(int(args.reassign * len_d),images_list)
-
+        sampler2 = UnifLabelSampler(int(args.reassign * len_val),images_list_val)
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset,
             batch_size=args.bs,
             sampler=sampler,
             pin_memory=True,
         )
-        
+        val_dataloader = torch.utils.data.DataLoader(
+            dataset_val,
+            batch_size=args.bs,
+            sampler=sampler2,
+            pin_memory=True,
+        )
         # set last fully connected layer
         mlp = list(model.classifier.children())
         mlp.append(nn.ReLU(inplace=True).cuda())
@@ -176,8 +191,8 @@ def main(args):
         
         losses[epoch], accuracies[epoch] = train(train_dataloader, model, criterion, optimizer, epoch, args.lr, args.wd)
         print(f'epoch {epoch} ended with loss {losses[epoch]}')
-        losses_val[epoch], accuracies_val[epoch] = validate(dataloader_val, model, criterion)
-        plot_loss_acc(losses[0:epoch],losses_val[0:epoch], accuracies[epoch], accuracies_val[epoch], epoch, now)
+        losses_val[epoch], accuracies_val[epoch] = validate(val_dataloader, model, criterion)
+        plot_loss_acc(losses[0:epoch],losses_val[0:epoch], accuracies[0:epoch], accuracies_val[0:epoch], epoch, now)
     
     
     
