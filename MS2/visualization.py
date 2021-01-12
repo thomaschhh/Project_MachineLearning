@@ -13,7 +13,6 @@ def plot_loss_acc(train_loss, val_loss, train_acc, val_acc, now, n_epochs, outfi
 
     # setup plot
     fig, ax = plt.subplots(nrows=1, ncols=2,figsize=(15,5))
-    n_epochs += 1  # just so the plots start at epoch 1
 
     # plot loss
     ax[0].plot(range(n_epochs), train_loss)
