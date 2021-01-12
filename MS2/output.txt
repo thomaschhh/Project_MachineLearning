@@ -1,0 +1,39 @@
+start training
+50 features computed
+100 features computed
+150 features computed
+200 features computed
+250 features computed
+300 features computed
+350 features computed
+400 features computed
+PCA
+clustering
+train pseudolabels
+trained 0-th feature
+start training
+50 features computed
+100 features computed
+150 features computed
+200 features computed
+250 features computed
+300 features computed
+350 features computed
+400 features computed
+PCA
+clustering
+train pseudolabels
+trained 0-th feature
+start training
+50 features computed
+100 features computed
+150 features computed
+200 features computed
+250 features computed
+300 features computed
+350 features computed
+400 features computed
+PCA
+clustering
+train pseudolabels
+trained 0-th feature

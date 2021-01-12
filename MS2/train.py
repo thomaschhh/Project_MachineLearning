@@ -75,8 +75,7 @@ def train(dataLoader, model, crit, optimizer, epoch, lr, wd):
         output = model(input_var)
       
         loss = crit(output, target_var)
-        acc = torch.sum(output == target_var)
-        
+        acc = torch.sum(output == target_var) 
        
         losses.update(loss.data, input_tensor.size(0))
         accuracies.update(acc.data,input_tensor.size(0))
@@ -174,7 +173,7 @@ def main(args):
             pin_memory=True,
         )
         val_dataloader = torch.utils.data.DataLoader(
-            dataset_val,
+            val_dataset,
             batch_size=args.bs,
             sampler=sampler2,
             pin_memory=True,
@@ -191,8 +190,8 @@ def main(args):
         
         losses[epoch], accuracies[epoch] = train(train_dataloader, model, criterion, optimizer, epoch, args.lr, args.wd)
         print(f'epoch {epoch} ended with loss {losses[epoch]}')
-        losses_val[epoch], accuracies_val[epoch] = validate(val_dataloader, model, criterion)
-        plot_loss_acc(losses[0:epoch],losses_val[0:epoch], accuracies[0:epoch], accuracies_val[0:epoch], epoch, now)
+        #losses_val[epoch], accuracies_val[epoch] = validate(val_dataloader, model, criterion)
+        plot_loss_acc(losses[0:epoch],losses[0:epoch], accuracies[0:epoch], accuracies[0:epoch], epoch, now)
     
     
     
