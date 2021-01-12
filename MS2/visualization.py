@@ -13,26 +13,31 @@ def plot_loss_acc(train_loss, val_loss, train_acc, val_acc, now, n_epochs, outfi
 
     # setup plot
     fig, ax = plt.subplots(nrows=1, ncols=2,figsize=(15,5))
+    n_epochs += 1  # just so the plots start at epoch 1
 
     # plot loss
     ax[0].plot(range(n_epochs), train_loss)
-    ax[0].plot(range(n_epochs), val_loss)
+    #ax[0].plot(range(n_epochs), val_loss)
     ax[0].set_ylabel('loss')
-    ax[0].set_title('train_loss vs val_loss')
-    
+    #ax[0].set_title('train_loss vs val_loss')
+    ax[0].set_title('train_loss')
+
     # plot accuracy
     ax[1].plot(range(n_epochs), train_acc)
-    ax[1].plot(range(n_epochs), val_acc)
+    #ax[1].plot(range(n_epochs), val_acc)
     ax[1].set_ylabel('accuracy')
-    ax[1].set_title('train_acc vs val_acc')
+    #ax[1].set_title('train_acc vs val_acc')
+    ax[1].set_title('train_acc')
 
     # plot adjustement
     for a in ax:
         a.grid(True)
-        a.legend(['train','val'],loc=4)
+        #a.legend(['train','val'],loc=4)
+        a.legend(['train'],loc=4)
         a.set_xlabel('Number of Epochs')
     if outfile:
-        os.mkdir(f"output/figures/{now}/loss")
+        if not os.path.exists(f"output/figures/{now}"):
+            os.mkdir(f"output/figures/{now}")
         plt.savefig(f"output/figures/{now}/loss_plot_{n_epochs}.png")
     plt.show()
     plt.close('all') 

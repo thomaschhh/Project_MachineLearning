@@ -7,7 +7,7 @@
 #$ -e error.txt
 
 import sys
-sys.path.append('/home/pml_16/MS2')
+sys.path.append('/home/pml_13/MS2')
 import numpy as np
 from data_loader import load_data
 import Models
@@ -38,7 +38,8 @@ def parse_args():
                         reassignments of clusters (default: 1)""")
     parser.add_argument('--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
-    parser.add_argument('--ep', type=int, default=100,
+    
+    parser.add_argument('--ep', type=int, default=1,
                         help='number of total epochs to run (default: 200)')
     parser.add_argument('--start_epoch', default=0, type=int,
                         help='manual epoch number (useful on restarts) (default: 0)')
@@ -191,7 +192,7 @@ def main(args):
         losses[epoch], accuracies[epoch] = train(train_dataloader, model, criterion, optimizer, epoch, args.lr, args.wd)
         print(f'epoch {epoch} ended with loss {losses[epoch]}')
         #losses_val[epoch], accuracies_val[epoch] = validate(val_dataloader, model, criterion)
-        plot_loss_acc(losses[0:epoch],losses[0:epoch], accuracies[0:epoch], accuracies[0:epoch], epoch, now)
+        plot_loss_acc(losses[0:epoch],losses[0:epoch], accuracies[0:epoch], accuracies[0:epoch], now, epoch)
     
     
     
