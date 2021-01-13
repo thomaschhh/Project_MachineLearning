@@ -39,7 +39,7 @@ def parse_args():
     parser.add_argument('--workers', default=4, type=int,
                         help='number of data loading workers (default: 4)')
     
-    parser.add_argument('--ep', type=int, default=1,
+    parser.add_argument('--ep', type=int, default=200,
                         help='number of total epochs to run (default: 200)')
     parser.add_argument('--start_epoch', default=0, type=int,
                         help='manual epoch number (useful on restarts) (default: 0)')
@@ -76,7 +76,7 @@ def train(dataLoader, model, crit, optimizer, epoch, lr, wd):
         output = model(input_var)
       
         loss = crit(output, target_var)
-        acc = accuracy(output, target_var)
+        acc =np.sum(np.array(accuracy(output, target_var)))
        
         losses.update(loss.data, input_tensor.size(0))
         accuracies.update(acc,input_tensor.size(0))
@@ -98,12 +98,12 @@ def validate(dataloader, model, crit):
         losses = AverageMeter()
         accuracies = AverageMeter()
         target = target.cuda(non_blocking=True)
-        input_var = torch.autograd.Variable(input_tensor.cuda(), volatile=True)
+        input_var = torch.autograd.Variable(input_tensor.cuda())
        
-        target_var = torch.autograd.Variable(target, volatile=True)
+        target_var = torch.autograd.Variable(target)
         output = model(input_var)
         loss = crit(output, target_var) 
-        acc = accuracy(output, target_var)
+        acc = np.sum(np.array(accuracy(output, target_var)))
         losses.update(loss.data, input_tensor.size(0))
         accuracies.update(acc.data,input_tensor.size(0))
     return losses.avg, accuracies.avg
@@ -188,7 +188,7 @@ def main(args):
         )
         val_dataloader = torch.utils.data.DataLoader(
             val_dataset,
-            batch_size=(args.bs/2),
+            batch_size=args.bs,
             sampler=sampler2,
             pin_memory=True,
         )
@@ -205,7 +205,7 @@ def main(args):
         losses[epoch], accuracies[epoch] = train(train_dataloader, model, criterion, optimizer, epoch, args.lr, args.wd)
         print(f'epoch {epoch} ended with loss {losses[epoch]}')
         losses_val[epoch], accuracies_val[epoch] = validate(val_dataloader, model, criterion)
-        plot_loss_acc(losses[0:epoch],losses[0:epoch], accuracies[0:epoch], accuracies[0:epoch], now, epoch)
+        plot_loss_acc(losses[0:epoch],losses[0:epoch], accuracies[0:epoch], accuracies[0:epoch], epoch,now)
     
     
     
