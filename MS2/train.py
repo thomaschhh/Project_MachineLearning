@@ -76,10 +76,10 @@ def train(dataLoader, model, crit, optimizer, epoch, lr, wd):
         output = model(input_var)
       
         loss = crit(output, target_var)
-        acc = torch.sum(output == target_var) 
+        acc = accuracy(output, target_var)
        
         losses.update(loss.data, input_tensor.size(0))
-        accuracies.update(acc.data,input_tensor.size(0))
+        accuracies.update(acc,input_tensor.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -98,17 +98,30 @@ def validate(dataloader, model, crit):
         losses = AverageMeter()
         accuracies = AverageMeter()
         target = target.cuda(non_blocking=True)
-        input_var = torch.autograd.Variable(input_tensor.cuda())
+        input_var = torch.autograd.Variable(input_tensor.cuda(), volatile=True)
        
-        target_var = torch.autograd.Variable(target)
+        target_var = torch.autograd.Variable(target, volatile=True)
         output = model(input_var)
-        print(output)
-        print(target_var)
         loss = crit(output, target_var) 
-        acc = torch.sum(output == target_var)
+        acc = accuracy(output, target_var)
         losses.update(loss.data, input_tensor.size(0))
         accuracies.update(acc.data,input_tensor.size(0))
     return losses.avg, accuracies.avg
+
+def accuracy(output, target, topk=(1,)):
+    """Computes the precision@k for the specified values of k"""
+    maxk = max(topk)
+    batch_size = target.size(0)
+
+    _, pred = output.topk(maxk, 1, True, True)
+    pred = pred.t()
+    correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+    res = []
+    for k in topk:
+        correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+        res.append(correct_k.mul_(100.0 / batch_size))
+    return res
 
 def main(args):
     # fix random seeds
@@ -175,7 +188,7 @@ def main(args):
         )
         val_dataloader = torch.utils.data.DataLoader(
             val_dataset,
-            batch_size=args.bs,
+            batch_size=(args.bs/2),
             sampler=sampler2,
             pin_memory=True,
         )
@@ -191,7 +204,7 @@ def main(args):
         
         losses[epoch], accuracies[epoch] = train(train_dataloader, model, criterion, optimizer, epoch, args.lr, args.wd)
         print(f'epoch {epoch} ended with loss {losses[epoch]}')
-        #losses_val[epoch], accuracies_val[epoch] = validate(val_dataloader, model, criterion)
+        losses_val[epoch], accuracies_val[epoch] = validate(val_dataloader, model, criterion)
         plot_loss_acc(losses[0:epoch],losses[0:epoch], accuracies[0:epoch], accuracies[0:epoch], now, epoch)
     
     
