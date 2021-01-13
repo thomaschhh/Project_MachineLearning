@@ -182,13 +182,13 @@ def main(args):
         sampler2 = UnifLabelSampler(int(args.reassign * len_val),images_list_val)
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset,
-            batch_size=args.bs,
+            batch_size=k,
             sampler=sampler,
             pin_memory=True,
         )
         val_dataloader = torch.utils.data.DataLoader(
             val_dataset,
-            batch_size=args.bs,
+            batch_size=k,
             sampler=sampler2,
             pin_memory=True,
         )
