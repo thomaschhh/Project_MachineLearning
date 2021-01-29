@@ -17,10 +17,11 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import argparse
 from preprocessing import compute_features, preprocessing, clustering, cluster_assign
-from utils import UnifLabelSampler, AverageMeter
-from tqdm import tqdm
+from utils import UnifLabelSampler, AverageMeter, Logger
 from visualization import plot_loss_acc, show_img
 from datetime import datetime
+import os
+import time
 
 def parse_args():
     parser = argparse.ArgumentParser(description='PyTorch Implementation of DeepCluster')
@@ -51,7 +52,7 @@ def parse_args():
     parser.add_argument('--checkpoints', type=int, default=25000,
                         help='how many iterations between two checkpoints (default: 25000)')
     parser.add_argument('--seed', type=int, default=31, help='random seed (default: 31)')
-    parser.add_argument('--exp', type=str, default='', help='path to exp folder')
+    parser.add_argument('--exp', type=str, default='/home/pml_16/MS3/output/models', help='path to exp folder')
     parser.add_argument('--verbose', action='store_true', help='chatty')
     return parser.parse_args()
 
@@ -123,6 +124,9 @@ def accuracy(output, target, topk=(1,)):
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
 
+
+    
+    
 def main(args):
     # fix random seeds
     print('start training')
@@ -131,7 +135,7 @@ def main(args):
     np.random.seed(args.seed)
     now = datetime.now()
     # load the data
-    dataloader, dataset_train, dataloader_val, dataset_val = load_data(args.path, args.bs, train_ratio = 0.9, test_ratio = 0.1)
+    dataloader, dataset_train, dataloader_val, dataset_val, tsamples = load_data(args.path, args.bs, train_ratio = 0.9, test_ratio = 0.1)
     #load vgg
     model = Models.__dict__["vgg16"](args.sobel) # pretrained weights?
     fd = int(model.top_layer.weight.size()[1]) 
@@ -150,6 +154,32 @@ def main(args):
 
     # define loss function
     criterion = nn.CrossEntropyLoss().cuda()
+    
+     # optionally resume from a checkpoint
+    if args.resume:
+        if os.path.isfile(args.resume):
+            print("=> loading checkpoint '{}'".format(args.resume))
+            checkpoint = torch.load(args.resume)
+            args.start_epoch = checkpoint['epoch']
+            # remove top_layer parameters from checkpoint
+            for key in checkpoint['state_dict']:
+                if 'top_layer' in key:
+                    del checkpoint['state_dict'][key]
+            model.load_state_dict(checkpoint['state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            print("=> loaded checkpoint '{}' (epoch {})"
+                  .format(args.resume, checkpoint['epoch']))
+        else:
+            print("=> no checkpoint found at '{}'".format(args.resume))
+
+    # creating checkpoint repo
+    exp_check = os.path.join(args.exp, 'checkpoints')
+    if not os.path.isdir(exp_check):
+        os.makedirs(exp_check)
+
+    # creating cluster assignments log
+    cluster_log = Logger(os.path.join(args.exp, 'clusters'))
+    
     losses = np.zeros(args.ep) # loss per epoch, array of size ep x 1
     accuracies = np.zeros(args.ep)
     losses_val = np.zeros(args.ep)
@@ -182,13 +212,13 @@ def main(args):
         sampler2 = UnifLabelSampler(int(args.reassign * len_val),images_list_val)
         train_dataloader = torch.utils.data.DataLoader(
             train_dataset,
-            batch_size=k,
+            batch_size=args.bs,
             sampler=sampler,
             pin_memory=True,
         )
         val_dataloader = torch.utils.data.DataLoader(
             val_dataset,
-            batch_size=k,
+            batch_size=args.bs,
             sampler=sampler2,
             pin_memory=True,
         )
@@ -201,14 +231,34 @@ def main(args):
         model.top_layer.bias.data.zero_()
         model.top_layer.cuda()
         # train network with clusters as pseudo-labels
-        
+         # train network with clusters as pseudo-labels
+        end = time.time()
         losses[epoch], accuracies[epoch] = train(train_dataloader, model, criterion, optimizer, epoch, args.lr, args.wd)
         print(f'epoch {epoch} ended with loss {losses[epoch]}')
         losses_val[epoch], accuracies_val[epoch] = validate(val_dataloader, model, criterion)
-        plot_loss_acc(losses[0:epoch],losses[0:epoch], accuracies[0:epoch], accuracies[0:epoch], epoch,now)
+        plot_loss_acc(losses[0:epoch],losses[0:epoch], accuracies[0:epoch], accuracies[0:epoch], now,epoch,args.k,tsamples, args.ep )
+        
+         # print log
+        if args.verbose:
+            print('###### Epoch [{0}] ###### \n'
+                  'Time: {1:.3f} s\n'
+                  'Clustering loss: {2:.3f} \n'
+                  'ConvNet loss: {3:.3f}'
+                  .format(epoch, time.time() - end , losses[epoch]))
+            
+        # save running checkpoint
+        torch.save({'epoch': epoch + 1,
+                    'arch': args.arch,
+                    'state_dict': model.state_dict(),
+                    'optimizer' : optimizer.state_dict()},
+                   os.path.join(args.exp, 'checkpoint.pth.tar'))
+
+        # save cluster assignments
+        cluster_log.log(images_list)
+
     
     
-    
+
     
 if __name__ == '__main__':
     args = parse_args()

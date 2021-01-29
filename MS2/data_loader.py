@@ -37,6 +37,6 @@ def load_data(path, batchSize, train_ratio=0.8, test_ratio=0.2):
     testloader = torch.utils.data.DataLoader(data_test,
                                              batch_size=batchSize,
                                              pin_memory=True)
-    return trainloader, data_train, testloader, data_test
+    return trainloader, data_train, testloader, data_test, n_train
 
     

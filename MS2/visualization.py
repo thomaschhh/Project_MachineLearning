@@ -6,7 +6,7 @@ import os
 # train model
 # hist = model.fit(X_train, y_train, batch_size=batch_size, epochs=n_epochs, verbose=1, validation_split=0.2)
 
-def plot_loss_acc(train_loss, val_loss, train_acc, val_acc, now, n_epochs, outfile = True):
+def plot_loss_acc(train_loss, val_loss, train_acc, val_acc, now, n_epochs, k, tsamples, eps, outfile = True):
     # visualizing losses and accuracy
     #train_loss, val_loss = hist.history['loss'], hist.history['val_loss']
     #train_acc, val_acc = hist.history['accuracy'], hist.history['val_accuracy']
@@ -16,16 +16,16 @@ def plot_loss_acc(train_loss, val_loss, train_acc, val_acc, now, n_epochs, outfi
 
     # plot loss
     ax[0].plot(range(n_epochs), train_loss)
-    #ax[0].plot(range(n_epochs), val_loss)
+    ax[0].plot(range(n_epochs), val_loss)
     ax[0].set_ylabel('loss')
-    #ax[0].set_title('train_loss vs val_loss')
+    ax[0].set_title('train_loss vs val_loss')
     ax[0].set_title('train_loss')
 
     # plot accuracy
     ax[1].plot(range(n_epochs), train_acc)
-    #ax[1].plot(range(n_epochs), val_acc)
+    ax[1].plot(range(n_epochs), val_acc)
     ax[1].set_ylabel('accuracy')
-    #ax[1].set_title('train_acc vs val_acc')
+    ax[1].set_title('train_acc vs val_acc')
     ax[1].set_title('train_acc')
 
     # plot adjustement
@@ -35,9 +35,9 @@ def plot_loss_acc(train_loss, val_loss, train_acc, val_acc, now, n_epochs, outfi
         a.legend(['train'],loc=4)
         a.set_xlabel('Number of Epochs')
     if outfile:
-        if not os.path.exists(f"output/figures/{now}"):
-            os.mkdir(f"output/figures/{now}")
-        plt.savefig(f"output/figures/{now}/loss_plot_{n_epochs}.png")
+        if not os.path.exists(f"output/figures/training_k{k}_s{tsamples}_e{n_epochs}"):
+            os.mkdir(f"output/figures/training_k{k}_s{tsamples}_e{n_epochs}")
+        plt.savefig(f"output/figures/training_k{k}_s{tsamples}_e{n_epochs}/loss_plot_{n_epochs}.png")
     plt.show()
     plt.close('all') 
     
