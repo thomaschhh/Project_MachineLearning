@@ -16,7 +16,8 @@ import torch.optim
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import argparse
-from preprocessing import compute_features, preprocessing, clustering, cluster_assign
+from preprocessing import compute_features, preprocessing
+from clustering import clustering, cluster_assign
 from utils import UnifLabelSampler, AverageMeter, Logger
 from visualization import plot_loss_acc, show_img
 from datetime import datetime
@@ -198,9 +199,17 @@ def main(args):
         print('PCA')
         pre_data = preprocessing(model, features)
         pre_data_val = preprocessing(model, features_val)
+        # clustering algorithm to use
+        deepcluster = clustering.__dict__[args.clustering](args.nmb_cluster)
         print('clustering')
-        clus_data, images_list = clustering(pre_data, args.k)
-        clus_data_val, images_list_val = clustering(pre_data_val, args.k)
+        deepcluster = clustering.__dict__[args.clustering](args.nmb_cluster)
+        deepcluster_val = clustering.__dict__[args.clustering](args.nmb_cluster)
+        
+        clustering_loss = deepcluster.cluster(pre_data, verbose=args.verbose)
+        clustering_loss_val = deepcluster_val.cluster(pre_data_val, verbose=args.verbose)
+        images_list = deepcluster.images_lists
+        images_list_val = deepcluster_val.images_lists
+        
         # pseudo labels
         print('train pseudolabels')
         train_dataset = cluster_assign(images_list, dataset_train)
@@ -251,7 +260,7 @@ def main(args):
                     'arch': args.arch,
                     'state_dict': model.state_dict(),
                     'optimizer' : optimizer.state_dict()},
-                   os.path.join(args.exp, 'checkpoint.pth.tar'))
+                   os.path.join(args.exp, f'checkpoint_{now}_k{args.k}_ep{epoch}.pth.tar'))
 
         # save cluster assignments
         cluster_log.log(images_list)

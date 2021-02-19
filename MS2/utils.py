@@ -2,7 +2,7 @@ import numpy as np
 import torch.utils.data as data
 from torch.utils.data.sampler import Sampler
 from PIL import Image
-
+import os
 
 def random(ds, k, random_state=42):
     """
