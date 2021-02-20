@@ -17,7 +17,7 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import argparse
 from preprocessing import compute_features, preprocessing
-import clustering, cluster_assign
+import clustering
 from utils import UnifLabelSampler, AverageMeter, Logger
 from visualization import plot_loss_acc, show_img
 from datetime import datetime
