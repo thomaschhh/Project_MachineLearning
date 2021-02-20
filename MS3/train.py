@@ -17,7 +17,7 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import argparse
 from preprocessing import compute_features, preprocessing
-from clustering import clustering, cluster_assign
+import clustering, cluster_assign
 from utils import UnifLabelSampler, AverageMeter, Logger
 from visualization import plot_loss_acc, show_img
 from datetime import datetime
@@ -212,8 +212,8 @@ def main(args):
         
         # pseudo labels
         print('train pseudolabels')
-        train_dataset = cluster_assign(images_list, dataset_train)
-        val_dataset = cluster_assign(images_list_val, dataset_val)
+        train_dataset = clustering.cluster_assign(images_list, dataset_train)
+        val_dataset = clustering.cluster_assign(images_list_val, dataset_val)
         len_d = len(train_dataset)
         len_val = len(val_dataset)
         # uniformly sample per target
