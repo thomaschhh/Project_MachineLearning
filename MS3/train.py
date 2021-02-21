@@ -138,7 +138,7 @@ def main(args):
     np.random.seed(args.seed)
     now = datetime.now()
     # load the data
-    dataloader, dataset_train, dataloader_val, dataset_val, tsamples = load_data(args.path, args.bs, train_ratio = 0.9, test_ratio = 0.1)
+    dataloader, dataset_train, dataloader_val, dataset_val, tsamples = load_data(args.path, args.bs, train_ratio = 0.8, test_ratio = 0.2)
     #load vgg
     model = Models.__dict__["vgg16"](args.sobel) # pretrained weights?
     fd = int(model.top_layer.weight.size()[1]) 
@@ -202,10 +202,10 @@ def main(args):
         pre_data = preprocessing(model, features)
         pre_data_val = preprocessing(model, features_val)
         # clustering algorithm to use
-        deepcluster = clustering.__dict__[args.clustering](args.nmb_cluster)
+        deepcluster = clustering.__dict__[args.clustering](args.k)
         print('clustering')
         
-        deepcluster_val = clustering.__dict__[args.clustering](args.nmb_cluster)
+        deepcluster_val = clustering.__dict__[args.clustering](args.k)
         
         clustering_loss = deepcluster.cluster(pre_data, verbose=args.verbose)
         clustering_loss_val = deepcluster_val.cluster(pre_data_val, verbose=args.verbose)
