@@ -1,5 +1,4 @@
 import time
-
 import faiss
 import numpy as np
 from PIL import Image

@@ -5,6 +5,7 @@ import torch
 from utils import ReassignedDataset
 import torchvision.transforms as transforms
 import faiss
+import os 
 
 def preprocessing(model, features, n_components = 256):
     #pca, whitening

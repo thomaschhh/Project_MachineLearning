@@ -7,7 +7,7 @@
 #$ -e error.txt
 
 import sys
-sys.path.append('/home/pml_13/MS2')
+sys.path.append('/home/pml_16/MS3')
 import numpy as np
 from data_loader import load_data
 import Models
@@ -35,6 +35,8 @@ def parse_args():
                         help='learning rate (default: 0.05)')
     parser.add_argument('--wd', default=-5, type=float,
                         help='weight decay pow (default: -5)')
+    parser.add_argument('--clustering', type=str, choices=['Kmeans', 'PIC'],
+                        default='Kmeans', help='clustering algorithm (default: Kmeans)')
     parser.add_argument('--reassign', type=float, default=1.,
                         help="""how many epochs of training between two consecutive
                         reassignments of clusters (default: 1)""")
@@ -202,7 +204,7 @@ def main(args):
         # clustering algorithm to use
         deepcluster = clustering.__dict__[args.clustering](args.nmb_cluster)
         print('clustering')
-        deepcluster = clustering.__dict__[args.clustering](args.nmb_cluster)
+        
         deepcluster_val = clustering.__dict__[args.clustering](args.nmb_cluster)
         
         clustering_loss = deepcluster.cluster(pre_data, verbose=args.verbose)
